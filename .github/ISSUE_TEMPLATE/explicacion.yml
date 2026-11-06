@@ -1,0 +1,31 @@
+name: Mejorar una explicación
+description: Comparte una instrucción que PyNotas explica de forma vaga o incorrecta.
+title: "[Explicación] "
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Versión de PyNotas y entorno
+      placeholder: "0.12.0 en Colab"
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Código mínimo con datos ficticios
+      description: No incluyas claves, datos personales o archivos privados.
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Qué explicación aparece
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Qué te habría ayudado a comprender
+    validations:
+      required: true
