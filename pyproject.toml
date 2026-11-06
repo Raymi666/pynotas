@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pynotas"
+version = "0.13.0.dev0"
+description = "Láminas visuales en español para comprender código Python y sus conceptos"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Raymi Vásquez"}, {name = "PyNotas contributors"}]
+requires-python = ">=3.10"
+keywords = ["education", "python", "jupyter", "colab", "spanish"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Education",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Operating System :: OS Independent",
+  "Topic :: Education",
+]
+dependencies = ["reportlab>=4.2,<5", "pypdfium2>=4.30,<6", "pillow>=10,<13"]
+
+[project.urls]
+Homepage = "https://github.com/Raymi666/pynotas"
+Repository = "https://github.com/Raymi666/pynotas"
+Issues = "https://github.com/Raymi666/pynotas/issues"
+
+[project.optional-dependencies]
+notebook = ["ipython>=7.34"]
+dev = ["ipython>=7.34", "build>=1.2", "twine>=6", "nbformat>=5", "pypdf>=5"]
+
+[project.scripts]
+pynotas = "pynotas.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pynotas = ["fonts/*.ttf", "fonts/LICENSE_DEJAVU"]
