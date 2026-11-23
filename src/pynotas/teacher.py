@@ -31,8 +31,12 @@ def destination(node):
     return 'Guardamos el resultado en ' + ', '.join(name(t) for t in targets) + '.'
 
 
-def explain(node, title, fallback, bindings, resolve, block=None):
+def explain(node, title, fallback, bindings, resolve, block=None, loops=None):
     """Prefer specific, qualified operations over guesses based on method names."""
+    from .data_reading import explain as explain_data
+    data_explanation = explain_data(node, bindings, loops or {})
+    if data_explanation:
+        return data_explanation
     if isinstance(node, (ast.Import, ast.ImportFrom)) and block:
         parts = []
         friendly = {
