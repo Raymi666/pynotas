@@ -170,6 +170,18 @@ def instance(node, names):
         return value if value.startswith('@') else ''
     if isinstance(node,ast.Call):
         q=canonical(qualified(node.func,names))
+        if q in {'pandas.DataFrame', 'pandas.Series'}:
+            return '@'+q
+        if q in {'pandas.read_csv', 'pandas.read_table'}:
+            # Chunked reads return a reader, not a DataFrame. Unknown **options
+            # may also enable chunking, so do not guess the result's type.
+            options = {k.arg: k.value for k in node.keywords}
+            if None not in options and all(
+                key not in options or isinstance(options[key], ast.Constant)
+                and options[key].value is default
+                for key, default in (('chunksize', None), ('iterator', False))
+            ):
+                return '@pandas.DataFrame'
         if q in TRACKED_CONSTRUCTORS:return '@'+q
         if q in {'@'+n for n in TORCH_LOSSES}:return '@torch.loss_value'
         if q in {'@shap.Explainer', '@shap.TreeExplainer', '@shap.LinearExplainer'}:

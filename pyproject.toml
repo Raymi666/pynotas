@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pynotas"
-version = "0.13.0.dev0"
+version = "0.13.1"
 description = "Láminas visuales en español para comprender código Python y sus conceptos"
 readme = "README.md"
 license = "MIT"

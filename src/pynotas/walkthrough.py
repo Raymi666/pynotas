@@ -259,6 +259,7 @@ def brief_reading(node,parts,bindings):
 def enrich_reading(model, tree, initial=None):
     from .analyzer import walk_details
     from .ml import update_bindings
+    from .data_reading import invalidate_loops
     blocks = {(b.line, b.end_line, b.column, b.end_column): b for b in walk_details(model.blocks)}
     lines = model.source.splitlines(keepends=True)
     offsets = [0]
@@ -279,9 +280,10 @@ def enrich_reading(model, tree, initial=None):
         t = matches[0]
         candidates.append((offsets[t.start[0]-1]+t.start[1],t.start[0],label,(detail,),scope,kind))
 
-    def visit(statements, bindings, scope=(), known_lists=()):
+    def visit(statements, bindings, scope=(), known_lists=(), loops=None):
         aliases = dict(bindings)
         lists=set(known_lists)
+        loop_vars = dict(loops or {})
         for node in statements:
             b = blocks.get((node.lineno, node.end_lineno, node.col_offset, node.end_col_offset))
             title, parts = describe(node, b, aliases)
@@ -291,20 +293,20 @@ def enrich_reading(model, tree, initial=None):
             start = position(node.lineno, node.col_offset)
             if getattr(node, 'decorator_list', ()):
                 start = position(node.decorator_list[0].lineno, max(0,node.decorator_list[0].col_offset-1))
-            title, brief, aside = teacher_explanation(node,title,brief_reading(node,parts,aliases),aliases,qualified,b)
+            title, brief, aside = teacher_explanation(node,title,brief_reading(node,parts,aliases),aliases,qualified,b,loop_vars)
             candidates.append((start,node.lineno,title,tuple(parts),scope,'decision' if isinstance(node, ast.If) else 'instruction',brief,aside))
             expr = getattr(node,'value',None)
             if isinstance(expr,ast.Call) and qualified(expr.func,aliases)=='scipy.io.loadmat':
                 matlab_calls.append(node.lineno)
             if isinstance(node, ast.If):
                 tag = f'L{node.lineno}: {short(node.test)}'
-                visit(node.body, aliases, scope + ('Si es verdadero · '+tag,),lists)
+                visit(node.body, aliases, scope + ('Si es verdadero · '+tag,),lists,loop_vars)
                 if node.orelse:
                     last = node.body[-1].end_lineno
                     is_elif = isinstance(node.orelse[0],ast.If) and lines[node.orelse[0].lineno-1].lstrip().startswith('elif ')
                     if not is_elif:
                         marker('else',last,node.orelse[0].lineno,scope,'Tomar el camino alternativo','Solo entra aquí si la condición anterior es falsa.')
-                    visit(node.orelse,aliases,scope+('Si es falso · '+tag,),lists)
+                    visit(node.orelse,aliases,scope+('Si es falso · '+tag,),lists,loop_vars)
             elif isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef,ast.ClassDef)):
                 local = dict(aliases)
                 # Function locals shadow imports throughout the function body.
@@ -317,27 +319,38 @@ def enrich_reading(model, tree, initial=None):
                 visit(node.body,local,scope+(('Dentro de la clase ' if isinstance(node,ast.ClassDef) else 'Dentro de la función ')+node.name+' · lectura del cuerpo',))
             elif isinstance(node,(ast.For,ast.AsyncFor,ast.While,ast.With,ast.AsyncWith)):
                 local = dict(aliases)
+                inner_loops = dict(loop_vars)
                 for n in ast.walk(getattr(node,'target',ast.Pass())):
-                    if isinstance(n,ast.Name):local[n.id]=''
-                visit(node.body,local,scope+(('En cada vuelta' if isinstance(node,(ast.For,ast.AsyncFor,ast.While)) else 'Dentro del contexto')+f' · L{node.lineno}',))
+                    if isinstance(n,ast.Name):
+                        local[n.id]=''
+                        inner_loops.pop(n.id,None)
+                if isinstance(node,(ast.For,ast.AsyncFor)) and isinstance(node.target,ast.Name):
+                    # Keep the source of the current item only inside this body.
+                    inner_loops[node.target.id]=node.iter
+                if isinstance(node,(ast.With,ast.AsyncWith)):
+                    for item in node.items:
+                        if item.optional_vars:
+                            inner_loops=invalidate_loops(inner_loops,item.optional_vars)
+                visit(node.body,local,scope+(('En cada vuelta' if isinstance(node,(ast.For,ast.AsyncFor,ast.While)) else 'Dentro del contexto')+f' · L{node.lineno}',),loops=inner_loops)
                 if getattr(node,'orelse',()):
                     marker('else',node.body[-1].end_lineno,node.orelse[0].lineno,scope,'Al terminar sin break','Se usa si la repetición termina sin ejecutar break.')
-                    visit(node.orelse,local,scope+('Al terminar sin break',))
+                    visit(node.orelse,local,scope+('Al terminar sin break',),loops=invalidate_loops(loop_vars,node))
             elif isinstance(node,(ast.Try,getattr(ast,'TryStar',ast.Try))):
-                visit(node.body,aliases,scope+('Intento dentro de try',))
+                visit(node.body,aliases,scope+('Intento dentro de try',),loops=loop_vars)
                 last=node.body[-1].end_lineno
                 for handler in node.handlers:
                     name=short(handler.type) if handler.type else 'cualquier excepción'
                     marker('except',last,handler.body[0].lineno,scope,'Responder a un error','Maneja '+name+' si se produce en el intento.')
                     local=dict(aliases)
                     if handler.name:local[handler.name]=''
-                    visit(handler.body,local,scope+('Si ocurre '+name,));last=handler.end_lineno
+                    handler_loops={k:v for k,v in loop_vars.items() if k!=handler.name}
+                    visit(handler.body,local,scope+('Si ocurre '+name,),loops=handler_loops);last=handler.end_lineno
                 for key,label in [('orelse','Sin excepción'),('finalbody','Al salir del intento')]:
                     body=getattr(node,key)
                     if body:
                         marker('else' if key=='orelse' else 'finally',last,body[0].lineno,scope,label,
                                'Se usa si try termina sin excepción.' if key=='orelse' else 'Se ejecuta al salir del intento, incluso si hubo un error.')
-                        visit(body,aliases,scope+(label,));last=body[-1].end_lineno
+                        visit(body,aliases,scope+(label,),loops=invalidate_loops(loop_vars,node));last=body[-1].end_lineno
             elif isinstance(node,ast.Match):
                 last=node.lineno
                 for case in node.cases:
@@ -346,7 +359,9 @@ def enrich_reading(model, tree, initial=None):
                     local=dict(aliases)
                     for n in ast.walk(case.pattern):
                         if isinstance(n,(ast.MatchAs,ast.MatchStar)) and n.name:local[n.name]=''
-                    visit(case.body,local,scope+('Caso '+pattern,));last=case.body[-1].end_lineno
+                    case_loops={k:v for k,v in loop_vars.items() if k not in {
+                        n.name for n in ast.walk(case.pattern) if isinstance(n,(ast.MatchAs,ast.MatchStar)) and n.name}}
+                    visit(case.body,local,scope+('Caso '+pattern,),loops=case_loops);last=case.body[-1].end_lineno
             def list_expression(value):
                 return isinstance(value,(ast.List,ast.ListComp)) or (isinstance(value,ast.IfExp) and list_expression(value.body) and list_expression(value.orelse))
             if isinstance(node,(ast.Assign,ast.AnnAssign)):
@@ -359,6 +374,7 @@ def enrich_reading(model, tree, initial=None):
             elif not isinstance(node,(ast.Import,ast.ImportFrom,ast.Pass)):
                 lists.clear()
             aliases = update_bindings(node, aliases)
+            loop_vars = invalidate_loops(loop_vars,node)
         return aliases
 
     aliases=dict(DEFAULTS);aliases.update(initial or {})

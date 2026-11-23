@@ -1,4 +1,12 @@
-# 0.13.0.dev0 — en desarrollo
+# 0.13.1 — 2026-11-23
+
+- `print(df[col].unique())` explica los valores distintos de la columna y su relación con el recorrido de `cols`.
+- Explicaciones también para mensajes con varios argumentos, f-strings, `len(...unique())`, asignaciones y `display` importado explícitamente.
+- Seguimiento estático de DataFrame/Series y lecturas CSV para reconocer pandas, incluso entre celdas. Se invalidan nombres reasignados y lecturas por bloques.
+- La relación con el bucle no se arrastra a funciones, fuera del recorrido ni después de una reasignación.
+- Se conservan los destinos de `print(file=...)`, el código original, las notas plegadas y las exportaciones. Sin nuevas dependencias, ejecución adicional ni servicios externos.
+
+# 0.13.0 — 2026-11-06
 
 - Explicaciones de entradas, acciones y parámetros para SHAP, Keras, PyTorch y MLP.
 - Reconocimiento de los imports de PyNotas y SHAP.

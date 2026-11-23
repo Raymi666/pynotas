@@ -6,7 +6,29 @@ El código del alumno no se vuelve a ejecutar. Las explicaciones son reglas
 locales, no respuestas de un LLM. Los resultados del programa siguen perteneciendo
 a la ejecución original del notebook.
 
-## Desarrollo 0.13
+## Valores únicos y contexto del recorrido (0.13.1)
+
+`for col in cols: print(df[col].unique())` se explica como una consulta de los
+valores distintos de cada columna de `df` recorrida en `cols`. La nota conecta
+la selección de columna con `unique()`, en vez de repetir la expresión de Python.
+`len(df[col].unique())` cuenta esos valores distintos; no muestra los valores.
+También se reconocen asignaciones, mensajes con varios argumentos, f-strings y
+`display` importado desde IPython. El destino de `print(file=...)` se conserva.
+
+Se sigue el origen de `pandas.DataFrame`, `pandas.Series`, `pandas.read_csv` y
+`pandas.read_table`, incluidos alias y celdas anteriores observadas. Las lecturas
+CSV por bloques no se tratan como tablas. Si no se conoce el origen de `df`, la
+explicación comienza con «Si df es una tabla de pandas…». Si el nombre se ha
+reasignado a un objeto desconocido, se conserva la explicación general.
+No se comprueban los tipos reales, las etiquetas duplicadas, las columnas
+jerárquicas ni los valores; la selección debe identificar una sola columna.
+
+El contexto del recorrido se limita al cuerpo correspondiente. Una reasignación
+de sus nombres lo invalida; no se traslada a una función definida dentro del bucle
+ni a instrucciones posteriores al mismo. Las comprensiones y otras cadenas de
+métodos todavía usan las explicaciones anteriores.
+
+## Cobertura de redes neuronales y SHAP (desde 0.13.0)
 
 Las reglas de `learning.py` explican entradas, acciones y opciones concretas para:
 
@@ -35,6 +57,8 @@ desempeño. `sample` documenta la diferencia de comportamiento desde SHAP 0.42.
 
 ## Referencias primarias de revisión
 
+- [Valores únicos de una serie de pandas](https://pandas.pydata.org/docs/reference/api/pandas.Series.unique.html)
+- [Lectura CSV y lectores por bloques](https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html)
 - [California Housing en SHAP](https://shap.readthedocs.io/en/latest/generated/shap.datasets.california.html)
 - [Muestreo de SHAP](https://shap.readthedocs.io/en/latest/generated/shap.utils.sample.html)
 - [Explainer](https://shap.readthedocs.io/en/latest/generated/shap.Explainer.html)

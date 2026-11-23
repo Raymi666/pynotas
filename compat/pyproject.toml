@@ -4,17 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "surfia-pedagogia"
-version = "0.13.0.dev0"
+version = "0.13.1"
 description = "Compatibilidad con SURF IA: la biblioteca pedagógica ahora se llama PyNotas"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{name = "SURF IA"}]
 requires-python = ">=3.10"
-dependencies = ["pynotas==0.13.0.dev0"]
+dependencies = ["pynotas==0.13.1"]
 
 [project.optional-dependencies]
-notebook = ["pynotas[notebook]==0.13.0.dev0"]
+notebook = ["pynotas[notebook]==0.13.1"]
 
 [project.scripts]
 surfia = "pynotas.cli:main"
