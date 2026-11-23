@@ -8,19 +8,26 @@ Identifica operaciones conocidas, explica sus pasos y parámetros y organiza las
 notas en láminas descargables. Funciona mediante análisis estático y plantillas:
 no necesita un LLM ni una API, y no vuelve a ejecutar tu código.
 
-![Ejemplo de notas de PyNotas](docs/ejemplo.png)
+![Ejemplo de notas de PyNotas](https://raw.githubusercontent.com/Raymi666/pynotas/main/docs/ejemplo.png)
 
-## Estado del desarrollo
+## Novedades de 0.13.1
 
-La versión pública estable es 0.12.0. Esta rama prepara **0.13.0.dev0**, con
-explicaciones más concretas para SHAP, Keras, PyTorch y modelos de scikit-learn.
-No se ha publicado esta versión de desarrollo en PyPI. Instalar desde PyPI
-todavía no incluye estos cambios.
+Mejora `print(df[col].unique())`: explica los valores distintos de las columnas
+recorridas en `cols`, en lugar de repetir el código. Conserva las explicaciones
+de redes neuronales y SHAP de 0.13.0. El ejemplo `examples/valores_unicos.py`
+permite probar el cambio con datos sencillos.
+
+## Novedades de 0.13.0
+
+**PyNotas 0.13.0** incorpora explicaciones más concretas para SHAP, Keras,
+PyTorch y modelos de scikit-learn: qué datos entran, qué hace cada operación
+y qué significan sus parámetros reconocidos. Conserva la ejecución única,
+las notas plegadas y las descargas en PDF y JPG.
 
 Por ejemplo, `model.fit(X, y)` explica que `X` contiene las entradas y `y` las
 respuestas que el modelo aprende a estimar. `shap.utils.sample(X, 100)` explica
 que selecciona filas para una muestra, y que eso aún no calcula valores SHAP.
-Consulta la [cobertura y límites](docs/EXPLICACIONES.md).
+Consulta la [cobertura y límites](https://github.com/Raymi666/pynotas/blob/main/docs/EXPLICACIONES.md).
 
 ## En Google Colab o Jupyter
 
@@ -33,6 +40,17 @@ En una nueva celda:
 ```python
 import pynotas
 ```
+
+Si ya la tenías instalada, actualiza con `%pip install --upgrade pynotas`.
+Para usar exactamente esta versión en una clase:
+
+```python
+%pip install --upgrade "pynotas==0.13.1"
+```
+
+Después reinicia la sesión de Colab o el kernel de Jupyter, vuelve a ejecutar
+`import pynotas` y comprueba `pynotas.__version__`. Ejecuta nuevamente las celdas
+que quieras explicar: las láminas guardadas antes de actualizar no se regeneran solas.
 
 Ejecuta después una celda de Python. La salida original permanece visible y las
 notas aparecen plegadas en **Ver explicación de PyNotas**. Puedes abrirlas,
@@ -79,13 +97,13 @@ Los límites del motor y de captura se mantienen respecto de SURF IA 0.11.0.
 
 La biblioteca antes se distribuía como `surfia-pedagogia` y se importaba con
 `import surfia`. El nuevo nombre es `pynotas` en ambos casos. El paquete de
-compatibilidad `surfia-pedagogia==0.12.0` depende de PyNotas 0.12.0 y conserva
+compatibilidad `surfia-pedagogia==0.13.1` depende de PyNotas 0.13.1 y conserva
 los imports anteriores. No contiene una segunda copia del motor.
 
-Para actualizar una clase existente tras publicar ambos paquetes:
+Para actualizar una clase que todavía usa `import surfia`:
 
 ```python
-%pip install --upgrade "surfia-pedagogia==0.12.0"
+%pip install --upgrade "surfia-pedagogia==0.13.1"
 ```
 
 Reinicia la sesión. Los notebooks anteriores pueden seguir usando `import surfia`.
@@ -93,14 +111,14 @@ Para nuevos materiales, usa `import pynotas`.
 
 ## Licencia
 
-[MIT](LICENSE): puedes usar, estudiar, modificar y redistribuir PyNotas, también
+[MIT](https://github.com/Raymi666/pynotas/blob/main/LICENSE): puedes usar, estudiar, modificar y redistribuir PyNotas, también
 con fines comerciales, conservando los avisos de licencia y autoría.
-Las fuentes tipográficas incluidas conservan [su propia licencia](src/pynotas/fonts/LICENSE_DEJAVU).
+Las fuentes tipográficas incluidas conservan [su propia licencia](https://github.com/Raymi666/pynotas/blob/main/src/pynotas/fonts/LICENSE_DEJAVU).
 
 ## Mejorarlo en comunidad
 
 Puedes proponer reglas, mejorar las explicaciones, informar errores y aportar
-ejemplos. Consulta [cómo contribuir](CONTRIBUTING.md). No hace falta implementar
+ejemplos. Consulta [cómo contribuir](https://github.com/Raymi666/pynotas/blob/main/CONTRIBUTING.md). No hace falta implementar
 una función para ayudar: una celda mínima y una explicación de por qué la nota
 no se entiende son aportes valiosos.
 
